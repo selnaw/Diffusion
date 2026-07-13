@@ -1,4 +1,4 @@
-```markdown
+markdown
 # Full-Stack Implementation of Robotic Arm Grasping Based on Diffusion Policy
 > Course Project: CS461 (EX2) Robotics Final Project
 >
@@ -32,6 +32,7 @@ Traditional imitation learning algorithms (Behavior Cloning, IRL) suffer from co
 5. **Fallback compatible design**: Automatically degrades to MLP backbone + custom scheduler when official UNet/diffusers are unavailable
 
 ## Tech Stack
+
 | Category | Details |
 |---------|--------|
 | Language | **Python 3.10** |
@@ -45,57 +46,49 @@ Traditional imitation learning algorithms (Behavior Cloning, IRL) suffer from co
 > Note: RTX 5060 Laptop has compatibility issues with current PyTorch CUDA version; all experiments can run normally on CPU.
 
 ## Quick Start
+
 ### Environment Requirements
 1. Create and activate conda environment
 ```bash
 conda create -n robodiff python=3.10
 conda activate robodiff
-```
-
-2. Install core dependencies
-```bash
+Install core dependencies
+bash
+运行
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pip install mani-skill3 gymnasium sapien h5py diffusers sympy wandb numpy
-```
-
-3. (Optional) Import environment directly from config file
-```bash
+(Optional) Import environment directly from config file
+bash
+运行
 conda env create -f environment.yml
-```
-
-### Dataset Preparation
-- Task: `PickCube-v1` motion planning expert demonstrations
-- Format: HDF5 trajectory files with JSON metadata
-- Scale: 100 expert trajectories
-- Default path: `~/.maniskill/demos/PickCube-v1/motionplanning/trajectory.h5`
-- Preprocessing: Automatic flattening of nested observation dict + action space normalization
-
-### Training
-#### 1. Train unconditional diffusion model (baseline)
-```bash
+Dataset Preparation
+Task: PickCube-v1 motion planning expert demonstrations
+Format: HDF5 trajectory files with JSON metadata
+Scale: 100 expert trajectories
+Default path: ~/.maniskill/demos/PickCube-v1/motionplanning/trajectory.h5
+Preprocessing: Automatic flattening of nested observation dict + action space normalization
+Training
+1. Train unconditional diffusion model (baseline)
+bash
+运行
 python train_diffusion.py
-```
-Output model: `diffusion_policy_final.pt`
-
-#### 2. Train conditional diffusion policy (full version)
-```bash
+Output model: diffusion_policy_final.pt
+2. Train conditional diffusion policy (full version)
+bash
+运行
 python train_diffusion_integrated.py --task PickCube-v1 --epochs 120 --batch-size 256
-```
-Output model: `cond_best_optimized.pt`
-
-### Visualization & Evaluation
-#### 1. Visualize unconditional model
-```bash
+Output model: cond_best_optimized.pt
+Visualization & Evaluation
+1. Visualize unconditional model
+bash
+运行
 python visualize_unconditional.py
-```
-
-#### 2. Visualize conditional diffusion policy
-```bash
+2. Visualize conditional diffusion policy
+bash
+运行
 python visualize_final.py --model-path cond_best_optimized.pt --episodes 3
-```
-
-## Project Structure
-```
+Project Structure
+plaintext
 Diffusion/
 ├── model/                  # Model backbone & diffusion scheduler implementation
 ├── src/                    # Core scripts: preprocessing, training, evaluation
@@ -107,63 +100,52 @@ Diffusion/
 ├── arm_demo.py             # Basic ManiSkill environment demo
 ├── environment.yml         # Conda environment config
 └── README.md
-```
-
-## Development Workflow
-> Complete iteration of requirement analysis → data processing → model building → tuning optimization
-1. **Requirement Analysis**: Compare BC/IRL defects, select Diffusion Policy as technical route, determine ManiSkill3 PickCube-v1 as verification task
-2. **Data Processing**: Parse HDF5 expert data, solve nested observation dict loading crash, design sliding window obs/action chunking, complete normalization
-3. **Model Building**: First implement unconditional diffusion baseline; then add observation condition branch, build conditional diffusion policy; implement fallback scheme for diffusers import failure
-4. **Tuning Optimization**: Adjust batch size & learning rate for CPU training; add gradient clipping, weight decay and cosine LR scheduler; add EMA to stabilize training
-5. **Verification & Closing**: Build simulation visualization pipeline, verify convergence, summarize bottlenecks and propose optimization roadmap
-
-## Core Implementation
-### 1. Unconditional Diffusion Baseline
-- Backbone: 4-layer MLP with Dropout
-- Scheduler: Linear beta schedule, 200 diffusion steps
-- Loss: MSE loss for noise prediction
-- Optimizer: AdamW with weight decay
-
-### 2. Conditional Diffusion Policy
-- Input: Historical observation sequence + noised action chunk + timestep embedding
-- Backbone: Priority ConditionalUnet1D, fallback to MLP
-- Scheduler: Cosine beta schedule (squaredcos_cap_v2), 100 diffusion steps
-- Chunking: Observation horizon=2, Action horizon=8, Prediction horizon=16
-- Training trick: Gradient clipping, EMA, cosine learning rate warmup
-
-## Engineering Challenges & Solutions
-| Problem | Root Cause | Solution |
-|---------|-----------|----------|
-| HDF5 observation tensor conversion crash | Official loader cannot handle nested dict observations | Custom flatten module converts nested dict to fixed-dim float vector |
-| diffusers import failure / ConditionalUnet1D unavailable | Environment version mismatch | Full manual implementation of DDPM forward/reverse process, replace UNet with MLP backbone |
-| RTX 5060 CUDA-PyTorch incompatibility | Driver & version mismatch, GPU training disabled | Adjust batch size & learning rate, adapt to CPU computing constraints |
-| Missing observation key in demo files | Inconsistent data format across versions | Add automatic fallback to environment state data |
-
-## Experiment Results
-### Convergence Performance
-- Initial training loss: ~0.69
-- Final converged loss: ~0.35
-- Conclusion: The full pipeline runs normally, and the model can capture basic statistical features of expert action distribution
-
-### Trajectory Performance
-- Unconditional model: Outputs random joint trajectories without valid manipulation logic (only as baseline reference)
-- Conditional MLP policy: Generates basic executable action sequences; trajectory smoothness is limited by MLP feature extraction capability
-- Verified advantage: Diffusion policy naturally outputs temporally coherent action chunks and avoids mode collapse
-
-## Limitations & Future Work
-### Current Limitations
-1. CPU-only training limits iteration times and hyperparameter tuning space
-2. MLP denoiser has weaker feature extraction than standard ConditionalUnet1D
-3. Lack of EMA, dynamic LR scheduling and other training stabilizers in baseline version
-4. Imperfect observation flattening logic leads to unstable training gradients
-
-### Optimization Roadmap
-1. Fix CUDA-PyTorch version matching to enable RTX 5060 GPU acceleration
-2. Replace MLP denoiser with standard 1D conditional UNet
-3. Add EMA, LR scheduler and gradient clipping to stabilize training
-4. Build automatic evaluation loop to record task success rate and average reward
-5. Integrate 3D point cloud features to improve generalization in unseen environments
-
-## License
+Development Workflow
+Complete iteration of requirement analysis → data processing → model building → tuning optimization
+Requirement Analysis: Compare BC/IRL defects, select Diffusion Policy as technical route, determine ManiSkill3 PickCube-v1 as verification task
+Data Processing: Parse HDF5 expert data, solve nested observation dict loading crash, design sliding window obs/action chunking, complete normalization
+Model Building: First implement unconditional diffusion baseline; then add observation condition branch, build conditional diffusion policy; implement fallback scheme for diffusers import failure
+Tuning Optimization: Adjust batch size & learning rate for CPU training; add gradient clipping, weight decay and cosine LR scheduler; add EMA to stabilize training
+Verification & Closing: Build simulation visualization pipeline, verify convergence, summarize bottlenecks and propose optimization roadmap
+Core Implementation
+1. Unconditional Diffusion Baseline
+Backbone: 4-layer MLP with Dropout
+Scheduler: Linear beta schedule, 200 diffusion steps
+Loss: MSE loss for noise prediction
+Optimizer: AdamW with weight decay
+2. Conditional Diffusion Policy
+Input: Historical observation sequence + noised action chunk + timestep embedding
+Backbone: Priority ConditionalUnet1D, fallback to MLP
+Scheduler: Cosine beta schedule (squaredcos_cap_v2), 100 diffusion steps
+Chunking: Observation horizon=2, Action horizon=8, Prediction horizon=16
+Training trick: Gradient clipping, EMA, cosine learning rate warmup
+Engineering Challenges & Solutions
+表格
+Problem	Root Cause	Solution
+HDF5 observation tensor conversion crash	Official loader cannot handle nested dict observations	Custom flatten module converts nested dict to fixed-dim float vector
+diffusers import failure / ConditionalUnet1D unavailable	Environment version mismatch	Full manual implementation of DDPM forward/reverse process, replace UNet with MLP backbone
+RTX 5060 CUDA-PyTorch incompatibility	Driver & version mismatch, GPU training disabled	Adjust batch size & learning rate, adapt to CPU computing constraints
+Missing observation key in demo files	Inconsistent data format across versions	Add automatic fallback to environment state data
+Experiment Results
+Convergence Performance
+Initial training loss: ~0.69
+Final converged loss: ~0.35
+Conclusion: The full pipeline runs normally, and the model can capture basic statistical features of expert action distribution
+Trajectory Performance
+Unconditional model: Outputs random joint trajectories without valid manipulation logic (only as baseline reference)
+Conditional MLP policy: Generates basic executable action sequences; trajectory smoothness is limited by MLP feature extraction capability
+Verified advantage: Diffusion policy naturally outputs temporally coherent action chunks and avoids mode collapse
+Limitations & Future Work
+Current Limitations
+CPU-only training limits iteration times and hyperparameter tuning space
+MLP denoiser has weaker feature extraction than standard ConditionalUnet1D
+Lack of EMA, dynamic LR scheduling and other training stabilizers in baseline version
+Imperfect observation flattening logic leads to unstable training gradients
+Optimization Roadmap
+Fix CUDA-PyTorch version matching to enable RTX 5060 GPU acceleration
+Replace MLP denoiser with standard 1D conditional UNet
+Add EMA, LR scheduler and gradient clipping to stabilize training
+Build automatic evaluation loop to record task success rate and average reward
+Integrate 3D point cloud features to improve generalization in unseen environments
+License
 MIT License - Open for academic research and secondary development.
-```
