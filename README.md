@@ -179,6 +179,3 @@ Diffusion/
 3. Add EMA, LR scheduler and gradient clipping to stabilize training
 4. Build automatic evaluation loop to record task success rate and average reward
 5. Integrate 3D point cloud features to improve generalization in unseen environments
-
-## License
-MIT License - Open for academic research and secondary development.
